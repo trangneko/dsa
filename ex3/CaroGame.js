@@ -22,17 +22,20 @@ var CaroGame = /** @class */ (function () {
         //implement this
         for (var _i = 0, _a = this.board; _i < _a.length; _i++) {
             var row = _a[_i];
-            console.log(row.map(function (cell) { return (cell === 0 ? '-' : cell === 1 ? 'X' : 'O'); }).join(' '));
+            console.log(row.map(function (cell) { return (cell === 0 ? "-" : cell === 1 ? "X" : "O"); }).join(" "));
         }
     };
     CaroGame.prototype.isMoveValid = function (x, y) {
         //implement this
-        return x >= 0 && x < this.n && y >= 0 && y < this.m && this.board[x][y] === 0;
+        return (x >= 0 && x < this.n && y >= 0 && y < this.m && this.board[x][y] === 0);
     };
     CaroGame.prototype.isWin = function (x, y) {
         //implement this
         var directions = [
-            [0, 1], [1, 0], [1, 1], [1, -1] // horizontal, vertical, diagonal (\), diagonal (/)
+            [0, 1],
+            [1, 0],
+            [1, 1],
+            [1, -1], // horizontal, vertical, diagonal (\), diagonal (/)
         ];
         for (var _i = 0, directions_1 = directions; _i < directions_1.length; _i++) {
             var dir = directions_1[_i];
@@ -77,8 +80,29 @@ var CaroGame = /** @class */ (function () {
             console.log("Player ".concat(this.player, " input move:"));
         }
     };
+    CaroGame.prototype.requestDraw = function () {
+        var _this = this;
+        console.log("Player ".concat(this.player, " is requesting a draw. Do you agree? (Type 'yes' or 'no')"));
+        var readline = require("readline");
+        var rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+        rl.on("line", function (input) {
+            if (input.toLowerCase() === "yes") {
+                _this.handleDraw();
+            }
+            else if (input.toLowerCase() === "no") {
+                console.log("Player ".concat(_this.opponent, " does not agree to the draw."));
+                rl.close();
+            }
+            else {
+                console.log('Invalid response. Type "yes" or "no".');
+            }
+        });
+    };
     CaroGame.prototype.handleDraw = function () {
-        console.log('The game is a draw!');
+        console.log("The game is a draw!");
         this.player = 0;
         this.opponent = 0;
         this.printBoard();
@@ -95,21 +119,37 @@ var CaroGame = /** @class */ (function () {
     };
     CaroGame.prototype.run = function () {
         var _this = this;
-        var readline = require('readline');
+        var readline = require("readline");
         var rl = readline.createInterface({
             input: process.stdin,
-            output: process.stdout
+            output: process.stdout,
         });
         rl.on('line', function (input) {
-            var _a = input.split(' ').map(Number), x = _a[0], y = _a[1];
-            if (_this.isMoveValid(x, y)) {
-                _this.tick(x, y);
-                _this.printBoard();
+            if (input.toLowerCase() === 'draw') {
+                _this.requestDraw();
             }
             else {
-                console.log('Invalid move');
+                var _a = input.split(' ').map(Number), x = _a[0], y = _a[1];
+                if (_this.isMoveValid(x, y)) {
+                    _this.tick(x, y);
+                    var isEndGame = _this.isWin(x, y) || _this.isBoardFull();
+                    if (isEndGame) {
+                        _this.printBoard();
+                        rl.close();
+                    }
+                    else {
+                        console.log("Player ".concat(_this.player, " input move:"));
+                    }
+                }
+                else {
+                    console.log('Invalid move');
+                }
             }
         });
+        console.log("Welcome to Caro Game!");
+        console.log("Make moves by entering the coordinates (row column). For example: '0 0', '1 3', '4 2'.");
+        console.log("Type 'draw' to propose a draw to your opponent.");
+        console.log("Let's start the game!");
         this.printBoard();
         console.log("Player ".concat(this.player, " input move:"));
     };
