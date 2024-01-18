@@ -17,20 +17,21 @@ var CaroGame = /** @class */ (function () {
         this.player = 1;
         this.opponent = 2;
         this.betAmount = 1;
+        this.rl = require('readline').createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
     }
     CaroGame.prototype.printBoard = function () {
-        //implement this
         for (var _i = 0, _a = this.board; _i < _a.length; _i++) {
             var row = _a[_i];
             console.log(row.map(function (cell) { return (cell === 0 ? "-" : cell === 1 ? "X" : "O"); }).join(" "));
         }
     };
     CaroGame.prototype.isMoveValid = function (x, y) {
-        //implement this
-        return (x >= 0 && x < this.n && y >= 0 && y < this.m && this.board[x][y] === 0);
+        return x >= 0 && x < this.n && y >= 0 && y < this.m && this.board[x][y] === 0;
     };
     CaroGame.prototype.isWin = function (x, y) {
-        //implement this
         var directions = [
             [0, 1],
             [1, 0],
@@ -39,7 +40,7 @@ var CaroGame = /** @class */ (function () {
         ];
         for (var _i = 0, directions_1 = directions; _i < directions_1.length; _i++) {
             var dir = directions_1[_i];
-            var count = 1; // count for the current direction
+            var count = 1;
             for (var i = 1; i < 5; i++) {
                 var newX = x + i * dir[0];
                 var newY = y + i * dir[1];
@@ -61,13 +62,12 @@ var CaroGame = /** @class */ (function () {
                 }
             }
             if (count >= 5) {
-                return true; // Player wins
+                return true;
             }
         }
         return false;
     };
     CaroGame.prototype.tick = function (x, y) {
-        //implement this
         this.board[x][y] = this.player;
         if (this.isWin(x, y)) {
             this.handleWin();
@@ -76,30 +76,36 @@ var CaroGame = /** @class */ (function () {
             this.handleDraw();
         }
         else {
-            this.player = this.player === 1 ? 2 : 1; // switch player
+            this.player = this.player === 1 ? 2 : 1;
             console.log("Player ".concat(this.player, " input move:"));
         }
     };
     CaroGame.prototype.requestDraw = function () {
         var _this = this;
         console.log("Player ".concat(this.player, " is requesting a draw. Do you agree? (Type 'yes' or 'no')"));
-        var readline = require("readline");
-        var rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
-        });
-        rl.on("line", function (input) {
-            if (input.toLowerCase() === "yes") {
+        var drawHandler = function (input) {
+            if (input.toLowerCase() === 'yes') {
                 _this.handleDraw();
+                _this.rl.removeListener('line', drawHandler);
+                _this.rl.removeListener('close', closeHandler);
+                _this.rl.close();
             }
-            else if (input.toLowerCase() === "no") {
+            else if (input.toLowerCase() === 'no') {
                 console.log("Player ".concat(_this.opponent, " does not agree to the draw."));
-                rl.close();
+                console.log("Player ".concat(_this.player, " input move:"));
+                _this.rl.removeListener('line', drawHandler);
+                _this.rl.removeListener('close', closeHandler);
             }
             else {
                 console.log('Invalid response. Type "yes" or "no".');
             }
-        });
+        };
+        var closeHandler = function () {
+            _this.rl.removeListener('line', drawHandler);
+            _this.rl.removeListener('close', closeHandler);
+        };
+        this.rl.on('line', drawHandler);
+        this.rl.on('close', closeHandler);
     };
     CaroGame.prototype.handleDraw = function () {
         console.log("The game is a draw!");
@@ -119,12 +125,7 @@ var CaroGame = /** @class */ (function () {
     };
     CaroGame.prototype.run = function () {
         var _this = this;
-        var readline = require("readline");
-        var rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
-        });
-        rl.on('line', function (input) {
+        this.rl.on('line', function (input) {
             if (input.toLowerCase() === 'draw') {
                 _this.requestDraw();
             }
@@ -132,14 +133,7 @@ var CaroGame = /** @class */ (function () {
                 var _a = input.split(' ').map(Number), x = _a[0], y = _a[1];
                 if (_this.isMoveValid(x, y)) {
                     _this.tick(x, y);
-                    var isEndGame = _this.isWin(x, y) || _this.isBoardFull();
-                    if (isEndGame) {
-                        _this.printBoard();
-                        rl.close();
-                    }
-                    else {
-                        console.log("Player ".concat(_this.player, " input move:"));
-                    }
+                    _this.printBoard();
                 }
                 else {
                     console.log('Invalid move');
